@@ -10,14 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Show registration page
      */
     public function create(): Response
     {
@@ -25,28 +24,45 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request.
-     *
-     * @throws ValidationException
+     * Handle registration request
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // ✅ CREATE USER WITH QUIZ DATA
         $user = User::create([
+            // BASIC INFO
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+
+            // 🧠 INDIVIDUAL PREFERENCE QUIZ
+            'personality' => $request->personality,
+            'purpose' => $request->purpose ? json_encode($request->purpose) : null,
+            'communication_style' => $request->communication_style,
+
+            // 👥 GROUP PREFERENCES
+            'group_type' => $request->group_type ? json_encode($request->group_type) : null,
+            'group_size' => $request->group_size,
+
+            // 🤖 AI PROFILE DATA
+            'bio' => $request->bio,
+            'ideal_person' => $request->ideal_person,
+            'dislike_type' => $request->dislike_type,
         ]);
 
+        // Trigger Laravel event
         event(new Registered($user));
 
+        // Auto login user
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Redirect to dashboard
+        return redirect('/dashboard');
     }
 }

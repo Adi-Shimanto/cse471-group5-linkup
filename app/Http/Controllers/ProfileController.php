@@ -10,22 +10,38 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Post;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Display the user's profile form + posts (FACEBOOK STYLE)
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
+        // 🔥 GET ONLY USER POSTS
+        $posts = Post::with('user')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'auth' => [
+                'user' => $user,
+            ],
+
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+
+            // 🔥 ADD POSTS TO PROFILE
+            'posts' => $posts,
         ]);
     }
 
     /**
-     * Update the user's profile information.
+     * Update basic profile info
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
@@ -41,7 +57,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's account.
+     * Delete account
      */
     public function destroy(Request $request): RedirectResponse
     {

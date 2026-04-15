@@ -14,20 +14,31 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Mass assignable fields
      */
     protected $fillable = [
+        // BASIC INFO
         'name',
         'email',
         'password',
+
+        // 🧠 INDIVIDUAL PREFERENCES
+        'personality',
+        'purpose',
+        'communication_style',
+
+        // 👥 GROUP PREFERENCES
+        'group_type',
+        'group_size',
+
+        // 🤖 AI PROFILE
+        'bio',
+        'ideal_person',
+        'dislike_type',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Hidden fields
      */
     protected $hidden = [
         'password',
@@ -35,15 +46,19 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Attribute casting
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
+
+            // password auto-hash (Laravel 10+ feature)
             'password' => 'hashed',
+
+            // JSON fields → arrays in PHP
+            'purpose' => 'array',
+            'group_type' => 'array',
         ];
     }
 }
