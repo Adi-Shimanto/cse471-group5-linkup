@@ -1,16 +1,17 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Dashboard({
     auth,
     users = [],
     posts = [],
+    incomingRequests = [],
+    friendCount = 0,
     filters = {}
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
 
-    // ================= SEARCH USERS =================
     const submitSearch = (e) => {
         e.preventDefault();
 
@@ -37,33 +38,107 @@ export default function Dashboard({
         );
     };
 
+    const sendRequest = (receiverId) => {
+        router.post(
+            route('connection-requests.store'),
+            { receiver_id: receiverId },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            }
+        );
+    };
+
+    const acceptRequest = (id) => {
+        router.post(
+            route('connection-requests.accept', id),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            }
+        );
+    };
+
+    const declineRequest = (id) => {
+        router.post(
+            route('connection-requests.decline', id),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            }
+        );
+    };
+
     const hasSearch = (filters.search ?? '').trim() !== '';
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Dashboard
-                </h2>
-            }
-        >
+        <AuthenticatedLayout user={auth.user} friendCount={friendCount}>
             <Head title="Dashboard" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-5xl sm:px-6 lg:px-8 space-y-6">
+                <div className="mx-auto max-w-5xl space-y-6 sm:px-6 lg:px-8">
+                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
+                                <p className="mt-1 text-sm text-gray-600">
+                                    You currently have <span className="font-semibold">{friendCount}</span> friend{friendCount === 1 ? '' : 's'}.
+                                </p>
+                            </div>
 
-                    {/* ================= SEARCH SECTION ================= */}
-                    <div className="bg-white shadow-sm sm:rounded-lg p-6">
+                            <Link
+                                href={route('friends.index')}
+                                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                            >
+                                Open Friends Page
+                            </Link>
+                        </div>
+                    </div>
 
-                        <h3 className="mb-4 text-lg font-semibold">
-                            Search Profiles
-                        </h3>
+                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                        <h3 className="mb-4 text-lg font-semibold">Incoming Requests</h3>
 
-                        <form
-                            onSubmit={submitSearch}
-                            className="mb-6 flex flex-col gap-3 sm:flex-row"
-                        >
+                        {incomingRequests.length === 0 ? (
+                            <p className="text-sm text-gray-600">No pending requests right now.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {incomingRequests.map((requestItem) => (
+                                    <div
+                                        key={requestItem.id}
+                                        className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div>
+                                            <p className="text-lg font-medium">{requestItem.sender.name}</p>
+                                            <p className="text-sm text-gray-600">{requestItem.sender.email}</p>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => acceptRequest(requestItem.id)}
+                                                className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+                                            >
+                                                Accept
+                                            </button>
+
+                                            <button
+                                                onClick={() => declineRequest(requestItem.id)}
+                                                className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                                            >
+                                                Decline
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                        <h3 className="mb-4 text-lg font-semibold">Search Profiles</h3>
+
+                        <form onSubmit={submitSearch} className="mb-6 flex flex-col gap-3 sm:flex-row">
                             <input
                                 type="text"
                                 value={search}
@@ -95,9 +170,7 @@ export default function Dashboard({
                         )}
 
                         {hasSearch && users.length === 0 && (
-                            <p className="text-sm text-red-600">
-                                No profiles found.
-                            </p>
+                            <p className="text-sm text-red-600">No profiles found.</p>
                         )}
 
                         {users.length > 0 && (
@@ -105,52 +178,66 @@ export default function Dashboard({
                                 {users.map((user) => (
                                     <div
                                         key={user.id}
-                                        className="rounded-lg border border-gray-200 p-4"
+                                        className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                                     >
-                                        <p className="text-lg font-medium">
-                                            {user.name}
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            {user.email}
-                                        </p>
+                                        <div>
+                                            <p className="text-lg font-medium">{user.name}</p>
+                                            <p className="text-sm text-gray-600">{user.email}</p>
+                                        </div>
+
+                                        <div>
+                                            {user.connection_status === 'accepted' ? (
+                                                <button
+                                                    disabled
+                                                    className="cursor-not-allowed rounded-md bg-green-600 px-4 py-2 text-white"
+                                                >
+                                                    Connected
+                                                </button>
+                                            ) : user.connection_status === 'pending' && user.is_request_sender ? (
+                                                <button
+                                                    disabled
+                                                    className="cursor-not-allowed rounded-md bg-amber-500 px-4 py-2 text-white"
+                                                >
+                                                    Request Sent
+                                                </button>
+                                            ) : user.connection_status === 'pending' ? (
+                                                <button
+                                                    disabled
+                                                    className="cursor-not-allowed rounded-md bg-gray-500 px-4 py-2 text-white"
+                                                >
+                                                    Pending Response
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => sendRequest(user.id)}
+                                                    className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+                                                >
+                                                    Send Request
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    {/* ================= NEWSFEED SECTION ================= */}
-                    <div className="bg-white shadow-sm sm:rounded-lg p-6">
-
-                        <h3 className="text-lg font-bold mb-4">
-                            📰 Newsfeed
-                        </h3>
+                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+                        <h3 className="mb-4 text-lg font-bold">Newsfeed</h3>
 
                         {posts.length === 0 ? (
-                            <p className="text-gray-500">
-                                No posts yet. Be the first to post!
-                            </p>
+                            <p className="text-gray-500">No posts yet. Be the first to post!</p>
                         ) : (
                             <div className="space-y-4">
                                 {posts.map((post) => (
-                                    <div
-                                        key={post.id}
-                                        className="border rounded-lg p-4"
-                                    >
-                                        <p className="font-semibold">
-                                            {post.user?.name}
-                                        </p>
-
-                                        <p className="text-gray-700 mt-2">
-                                            {post.content}
-                                        </p>
+                                    <div key={post.id} className="rounded-lg border p-4">
+                                        <p className="font-semibold">{post.user?.name}</p>
+                                        <p className="mt-2 text-gray-700">{post.content}</p>
                                     </div>
                                 ))}
                             </div>
                         )}
-
                     </div>
-
                 </div>
             </div>
         </AuthenticatedLayout>
