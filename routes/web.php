@@ -11,6 +11,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ReactionController;
 use App\Http\Controllers\ShareController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\GroupController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -63,6 +65,26 @@ Route::middleware('auth')->group(function () {
     // Shares
     Route::post('/posts/{postId}/share', [ShareController::class, 'store'])
         ->name('shares.store');
+
+    // Messages
+    Route::get('/messages', [MessageController::class, 'index'])
+        ->name('messages.index');
+    Route::post('/messages', [MessageController::class, 'store'])
+        ->name('messages.store');
+
+    // Groups
+    Route::get('/groups', [GroupController::class, 'index'])
+        ->name('groups.index');
+    Route::post('/groups', [GroupController::class, 'store'])
+        ->name('groups.store');
+    Route::post('/groups/{id}/join', [GroupController::class, 'join'])
+        ->name('groups.join');
+    Route::post('/groups/{id}/leave', [GroupController::class, 'leave'])
+        ->name('groups.leave');
+    Route::get('/groups/{id}/chat', [GroupController::class, 'chat'])
+        ->name('groups.chat');
+    Route::post('/groups/{id}/messages', [GroupController::class, 'sendMessage'])
+        ->name('groups.messages.store');
 });
 
 require __DIR__.'/auth.php';
