@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConnectionRequest;
+use App\Models\UserBlock;
+use App\Notifications\FriendRequestAcceptedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,6 +21,18 @@ class ConnectionRequestController extends Controller
 
         if ($senderId === $receiverId) {
             return back()->with('error', 'You cannot send a request to yourself.');
+        }
+
+        $isBlocked = UserBlock::where(function ($query) use ($senderId, $receiverId) {
+            $query->where('blocker_id', $senderId)
+                ->where('blocked_user_id', $receiverId);
+        })->orWhere(function ($query) use ($senderId, $receiverId) {
+            $query->where('blocker_id', $receiverId)
+                ->where('blocked_user_id', $senderId);
+        })->exists();
+
+        if ($isBlocked) {
+            return back()->with('error', 'You cannot send a request because one of you has blocked the other user.');
         }
 
         $alreadyExists = ConnectionRequest::where(function ($query) use ($senderId, $receiverId) {
@@ -44,7 +58,8 @@ class ConnectionRequestController extends Controller
 
     public function accept($id)
     {
-        $connectionRequest = ConnectionRequest::where('id', $id)
+        $connectionRequest = ConnectionRequest::with('sender')
+            ->where('id', $id)
             ->where('receiver_id', Auth::id())
             ->where('status', 'pending')
             ->firstOrFail();
@@ -53,7 +68,11 @@ class ConnectionRequestController extends Controller
             'status' => 'accepted',
         ]);
 
-        return back()->with('success', 'Connection request accepted.');
+        $connectionRequest->sender?->notify(
+            new FriendRequestAcceptedNotification(Auth::user(), $connectionRequest)
+        );
+
+        return back()->with('success', 'Connection request accepted. The sender has been notified.');
     }
 
     public function decline($id)

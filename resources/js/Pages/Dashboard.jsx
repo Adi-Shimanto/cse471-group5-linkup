@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import PostCard from '@/Components/PostCard';
 
@@ -9,68 +9,48 @@ export default function Dashboard({
     posts = [],
     incomingRequests = [],
     friendCount = 0,
-    filters = {}
+    filters = {},
+    premiumStatus = {},
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [postContent, setPostContent] = useState('');
+    const notifications = usePage().props.notifications ?? [];
 
     const submitSearch = (e) => {
         e.preventDefault();
-
-        router.get(
-            route('dashboard'),
-            { search: search },
-            {
-                preserveState: true,
-                replace: true,
-            }
-        );
+        router.get(route('dashboard'), { search }, { preserveState: true, replace: true });
     };
 
     const clearSearch = () => {
         setSearch('');
-
-        router.get(
-            route('dashboard'),
-            {},
-            {
-                preserveState: true,
-                replace: true,
-            }
-        );
+        router.get(route('dashboard'), {}, { preserveState: true, replace: true });
     };
 
     const sendRequest = (receiverId) => {
-        router.post(
-            route('connection-requests.store'),
-            { receiver_id: receiverId },
-            {
-                preserveScroll: true,
-                preserveState: true,
-            }
-        );
+        router.post(route('connection-requests.store'), { receiver_id: receiverId }, { preserveScroll: true });
     };
 
     const acceptRequest = (id) => {
-        router.post(
-            route('connection-requests.accept', id),
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-            }
-        );
+        router.post(route('connection-requests.accept', id), {}, { preserveScroll: true });
     };
 
     const declineRequest = (id) => {
-        router.post(
-            route('connection-requests.decline', id),
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-            }
-        );
+        router.post(route('connection-requests.decline', id), {}, { preserveScroll: true });
+    };
+
+    const blockUser = (userId) => {
+        if (!window.confirm('Block this user?')) return;
+        router.post(route('blocks.store'), { blocked_user_id: userId });
+    };
+
+    const unblockUser = (userId) => {
+        router.delete(route('blocks.destroy', userId));
+    };
+
+    const reportUser = (userId, name) => {
+        const reason = window.prompt(`Report ${name}:`);
+        if (!reason) return;
+        router.post(route('reports.store'), { reported_user_id: userId, reason });
     };
 
     const hasSearch = (filters.search ?? '').trim() !== '';
@@ -80,193 +60,82 @@ export default function Dashboard({
             <Head title="Dashboard" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-5xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
-                                <p className="mt-1 text-sm text-gray-600">
-                                    You currently have <span className="font-semibold">{friendCount}</span> friend{friendCount === 1 ? '' : 's'}.
-                                </p>
-                            </div>
+                <div className="mx-auto max-w-5xl space-y-6">
 
-                            <Link
-                                href={route('friends.index')}
-                                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                            >
-                                Open Friends Page
-                            </Link>
+                    {/* Dashboard + Subscription */}
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <div className="bg-white p-6 rounded shadow">
+                            <h2 className="text-xl font-bold">Dashboard</h2>
+                            <p>Friends: {friendCount}</p>
+                            <Link href={route('friends.index')} className="btn">Friends</Link>
+                            <Link href={route('reports.index')} className="btn bg-red-500">Safety</Link>
+                        </div>
+
+                        <div className="bg-white p-6 rounded shadow">
+                            <h3>Subscription</h3>
+                            <p>Plan: {premiumStatus.plan_name ?? 'Free'}</p>
+                            <Link href={route('subscriptions.index')} className="btn bg-yellow-500">Plans</Link>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-semibold">Incoming Requests</h3>
-
-                        {incomingRequests.length === 0 ? (
-                            <p className="text-sm text-gray-600">No pending requests right now.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {incomingRequests.map((requestItem) => (
-                                    <div
-                                        key={requestItem.id}
-                                        className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-                                    >
-                                        <div>
-                                            <p className="text-lg font-medium">{requestItem.sender.name}</p>
-                                            <p className="text-sm text-gray-600">{requestItem.sender.email}</p>
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => acceptRequest(requestItem.id)}
-                                                className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-                                            >
-                                                Accept
-                                            </button>
-
-                                            <button
-                                                onClick={() => declineRequest(requestItem.id)}
-                                                className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-                                            >
-                                                Decline
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                    {/* Notifications */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <h3>Notifications</h3>
+                        {notifications.map(n => (
+                            <div key={n.id}>{n.title}</div>
+                        ))}
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-semibold">Search Profiles</h3>
+                    {/* Incoming Requests */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <h3>Requests</h3>
+                        {incomingRequests.map(r => (
+                            <div key={r.id}>
+                                {r.sender.name}
+                                <button onClick={() => acceptRequest(r.id)}>Accept</button>
+                                <button onClick={() => declineRequest(r.id)}>Decline</button>
+                            </div>
+                        ))}
+                    </div>
 
-                        <form onSubmit={submitSearch} className="mb-6 flex flex-col gap-3 sm:flex-row">
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search by name or email"
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-
-                            <button
-                                type="submit"
-                                className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                            >
-                                Search
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={clearSearch}
-                                className="rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
-                            >
-                                Clear
-                            </button>
+                    {/* Search */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <form onSubmit={submitSearch}>
+                            <input value={search} onChange={e => setSearch(e.target.value)} />
+                            <button>Search</button>
                         </form>
 
-                        {!hasSearch && (
-                            <p className="text-sm text-gray-600">
-                                Type a name or email to search for other users.
-                            </p>
-                        )}
-
-                        {hasSearch && users.length === 0 && (
-                            <p className="text-sm text-red-600">No profiles found.</p>
-                        )}
-
-                        {users.length > 0 && (
-                            <div className="space-y-3">
-                                {users.map((user) => (
-                                    <div
-                                        key={user.id}
-                                        className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-                                    >
-                                        <div>
-                                            <p className="text-lg font-medium">{user.name}</p>
-                                            <p className="text-sm text-gray-600">{user.email}</p>
-                                        </div>
-
-                                        <div>
-                                            {user.connection_status === 'accepted' ? (
-                                                <button
-                                                    disabled
-                                                    className="cursor-not-allowed rounded-md bg-green-600 px-4 py-2 text-white"
-                                                >
-                                                    Connected
-                                                </button>
-                                            ) : user.connection_status === 'pending' && user.is_request_sender ? (
-                                                <button
-                                                    disabled
-                                                    className="cursor-not-allowed rounded-md bg-amber-500 px-4 py-2 text-white"
-                                                >
-                                                    Request Sent
-                                                </button>
-                                            ) : user.connection_status === 'pending' ? (
-                                                <button
-                                                    disabled
-                                                    className="cursor-not-allowed rounded-md bg-gray-500 px-4 py-2 text-white"
-                                                >
-                                                    Pending Response
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => sendRequest(user.id)}
-                                                    className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                                                >
-                                                    Send Request
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                        {users.map(u => (
+                            <div key={u.id}>
+                                {u.name}
+                                {u.is_blocked
+                                    ? <button onClick={() => unblockUser(u.id)}>Unblock</button>
+                                    : <button onClick={() => blockUser(u.id)}>Block</button>
+                                }
+                                <button onClick={() => reportUser(u.id, u.name)}>Report</button>
                             </div>
-                        )}
+                        ))}
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-bold">Newsfeed</h3>
+                    {/* Newsfeed */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <h3>Newsfeed</h3>
 
-                        {/* Create Post Form */}
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                router.post('/posts', { content: postContent }, {
-                                    preserveScroll: true,
-                                    onSuccess: () => setPostContent(''),
-                                });
-                            }}
-                            className="mb-6 flex flex-col gap-3"
-                        >
-                            <textarea
-                                value={postContent}
-                                onChange={(e) => setPostContent(e.target.value)}
-                                placeholder="What's on your mind?"
-                                rows={3}
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <button
-                                type="submit"
-                                className="self-end rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
-                            >
-                                Post
-                            </button>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            router.post('/posts', { content: postContent }, {
+                                onSuccess: () => setPostContent('')
+                            });
+                        }}>
+                            <textarea value={postContent} onChange={e => setPostContent(e.target.value)} />
+                            <button>Post</button>
                         </form>
 
-                        {posts.length === 0 ? (
-                            <p className="text-gray-500">No posts yet. Be the first to post!</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {posts.map((post) => (
-                                    <PostCard
-                                        key={post.id}
-                                        post={post}
-                                        auth={auth}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        {posts.map(post => (
+                            <PostCard key={post.id} post={post} auth={auth} />
+                        ))}
                     </div>
+
                 </div>
             </div>
         </AuthenticatedLayout>
