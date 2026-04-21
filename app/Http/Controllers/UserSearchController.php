@@ -16,9 +16,12 @@ class UserSearchController extends Controller
         $search = trim((string) $request->input('search', ''));
         $currentUserId = $request->user()->id;
 
-        $posts = Post::with('user')
-            ->latest()
-            ->get();
+        $posts = Post::with([
+            'user',
+            'comments.user',
+            'reactions',
+            'shares'
+        ])->latest()->get();
 
         $friendCount = ConnectionRequest::where('status', 'accepted')
             ->where(function ($query) use ($currentUserId) {

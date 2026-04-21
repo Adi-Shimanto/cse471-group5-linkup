@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import PostCard from '@/Components/PostCard';
 
 export default function Dashboard({
     auth,
@@ -11,6 +12,7 @@ export default function Dashboard({
     filters = {}
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
+    const [postContent, setPostContent] = useState('');
 
     const submitSearch = (e) => {
         e.preventDefault();
@@ -225,15 +227,42 @@ export default function Dashboard({
                     <div className="bg-white p-6 shadow-sm sm:rounded-lg">
                         <h3 className="mb-4 text-lg font-bold">Newsfeed</h3>
 
+                        {/* Create Post Form */}
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                router.post('/posts', { content: postContent }, {
+                                    preserveScroll: true,
+                                    onSuccess: () => setPostContent(''),
+                                });
+                            }}
+                            className="mb-6 flex flex-col gap-3"
+                        >
+                            <textarea
+                                value={postContent}
+                                onChange={(e) => setPostContent(e.target.value)}
+                                placeholder="What's on your mind?"
+                                rows={3}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <button
+                                type="submit"
+                                className="self-end rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
+                            >
+                                Post
+                            </button>
+                        </form>
+
                         {posts.length === 0 ? (
                             <p className="text-gray-500">No posts yet. Be the first to post!</p>
                         ) : (
                             <div className="space-y-4">
                                 {posts.map((post) => (
-                                    <div key={post.id} className="rounded-lg border p-4">
-                                        <p className="font-semibold">{post.user?.name}</p>
-                                        <p className="mt-2 text-gray-700">{post.content}</p>
-                                    </div>
+                                    <PostCard
+                                        key={post.id}
+                                        post={post}
+                                        auth={auth}
+                                    />
                                 ))}
                             </div>
                         )}

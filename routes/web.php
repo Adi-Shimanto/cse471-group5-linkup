@@ -8,6 +8,9 @@ use App\Http\Controllers\UserSearchController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ReactionController;
+use App\Http\Controllers\ShareController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -44,6 +47,22 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/friends/{id}', [ConnectionRequestController::class, 'removeFriend'])
         ->name('friends.remove');
+
+    // Comments
+    Route::post('/posts/{postId}/comments', [CommentController::class, 'store'])
+        ->name('comments.store');
+    Route::delete('/comments/{id}', [CommentController::class, 'destroy'])
+        ->name('comments.destroy');
+
+    // Reactions
+    Route::post('/posts/{postId}/reactions', [ReactionController::class, 'store'])
+        ->name('reactions.store');
+    Route::delete('/posts/{postId}/reactions', [ReactionController::class, 'destroy'])
+        ->name('reactions.destroy');
+
+    // Shares
+    Route::post('/posts/{postId}/share', [ShareController::class, 'store'])
+        ->name('shares.store');
 });
 
 require __DIR__.'/auth.php';
