@@ -10,7 +10,12 @@ class PostController extends Controller
 {
     public function index()
     {
-        return Post::with('user')->latest()->get();
+        return Post::with([
+            'user',
+            'comments.user',
+            'reactions',
+            'shares',
+        ])->latest()->get();
     }
 
     public function store(Request $request)

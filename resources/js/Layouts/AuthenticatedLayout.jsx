@@ -158,10 +158,18 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
 
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                     <div className="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('friends.index')} active={route().current('friends.index')}>Friends</ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('reports.index')} active={route().current('reports.index')}>Safety</ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('subscriptions.index')} active={route().current('subscriptions.index')}>Plans</ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
+                            Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('friends.index')} active={route().current('friends.index')}>
+                            Friends
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('reports.index')} active={route().current('reports.index')}>
+                            Safety
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('subscriptions.index')} active={route().current('subscriptions.index')}>
+                            Plans
+                        </ResponsiveNavLink>
                     </div>
 
                     <div className="border-t border-gray-200 pb-1 pt-4">

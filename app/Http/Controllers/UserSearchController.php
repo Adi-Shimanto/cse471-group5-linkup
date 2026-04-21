@@ -22,12 +22,17 @@ class UserSearchController extends Controller
         $blockedMe = UserBlock::where('blocked_user_id', $currentUserId)->pluck('blocker_id');
         $allBlockedIds = $blockedByMe->merge($blockedMe)->unique()->values();
 
-        $posts = Post::with('user')
-            ->when($allBlockedIds->isNotEmpty(), function ($query) use ($allBlockedIds) {
-                $query->whereNotIn('user_id', $allBlockedIds);
-            })
-            ->latest()
-            ->get();
+        $posts = Post::with([
+            'user',
+            'comments.user',
+            'reactions',
+            'shares'
+        ])
+        ->when($allBlockedIds->isNotEmpty(), function ($query) use ($allBlockedIds) {
+            $query->whereNotIn('user_id', $allBlockedIds);
+        })
+        ->latest()
+        ->get();
 
         $friendCount = ConnectionRequest::where('status', 'accepted')
             ->where(function ($query) use ($currentUserId) {
