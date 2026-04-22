@@ -48,6 +48,9 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                                 <NavLink href={route('groups.index')} active={route().current('groups.index')}>
                                     Groups
                                 </NavLink>
+                                <NavLink href={route('ai.match')} active={route().current('ai.match')}>
+                                    AI Match
+                                </NavLink>
                                 <NavLink href={route('reports.index')} active={route().current('reports.index')}>
                                     Safety
                                 </NavLink>
@@ -177,6 +180,9 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('groups.index')} active={route().current('groups.index')}>
                             Groups
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('ai.match')} active={route().current('ai.match')}>
+                            AI Match
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('reports.index')} active={route().current('reports.index')}>
                             Safety

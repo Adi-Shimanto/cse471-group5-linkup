@@ -16,6 +16,7 @@ use App\Http\Controllers\ReactionController;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\AiMatchController;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +99,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/groups/{id}/messages', [GroupController::class, 'sendMessage'])->name('groups.messages.store');
     Route::post('/groups/{id}/add-member', [GroupController::class, 'addMember'])->name('groups.addMember');
     Route::delete('/groups/{id}/remove-member/{userId}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
+
+    // AI Match
+    Route::get('/ai-match', [AiMatchController::class, 'index'])->name('ai.match');
+    Route::post('/ai-match', [AiMatchController::class, 'match'])->name('ai.match.post');
 });
 
 // Payment callbacks (outside auth)
