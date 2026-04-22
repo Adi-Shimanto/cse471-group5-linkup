@@ -97,6 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/groups/{id}/chat', [GroupController::class, 'chat'])->name('groups.chat');
     Route::post('/groups/{id}/messages', [GroupController::class, 'sendMessage'])->name('groups.messages.store');
     Route::post('/groups/{id}/add-member', [GroupController::class, 'addMember'])->name('groups.addMember');
+    Route::delete('/groups/{id}/remove-member/{userId}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
 });
 
 // Payment callbacks (outside auth)

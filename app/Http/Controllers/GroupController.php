@@ -42,7 +42,6 @@ class GroupController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        // Add creator as admin member
         GroupMember::create([
             'group_id' => $group->id,
             'user_id' => Auth::id(),
@@ -156,7 +155,6 @@ class GroupController extends Controller
 
         $group = Group::findOrFail($id);
 
-        // Check if requester is admin
         $isAdmin = GroupMember::where('group_id', $id)
             ->where('user_id', Auth::id())
             ->where('role', 'admin')
@@ -166,7 +164,6 @@ class GroupController extends Controller
             return back()->with('error', 'Only admin can add members.');
         }
 
-        // Check if already a member
         $alreadyMember = GroupMember::where('group_id', $id)
             ->where('user_id', $request->user_id)
             ->exists();
@@ -182,5 +179,28 @@ class GroupController extends Controller
         ]);
 
         return back()->with('success', 'Member added successfully!');
+    }
+
+    // Remove member from group
+    public function removeMember(Request $request, $id, $userId)
+    {
+        $isAdmin = GroupMember::where('group_id', $id)
+            ->where('user_id', Auth::id())
+            ->where('role', 'admin')
+            ->exists();
+
+        if (!$isAdmin) {
+            return back()->with('error', 'Only admin can remove members.');
+        }
+
+        if ($userId == Auth::id()) {
+            return back()->with('error', 'You cannot remove yourself.');
+        }
+
+        GroupMember::where('group_id', $id)
+            ->where('user_id', $userId)
+            ->delete();
+
+        return back()->with('success', 'Member removed.');
     }
 }

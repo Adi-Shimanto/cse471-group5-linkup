@@ -47,6 +47,12 @@ export default function GroupChat({ auth, group, messages = [], friends = [] }) 
         });
     };
 
+    const removeMember = (userId) => {
+        router.delete(route('groups.removeMember', { id: group.id, userId: userId }), {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <AuthenticatedLayout user={auth.user}>
             <Head title={group.name} />
@@ -95,13 +101,23 @@ export default function GroupChat({ auth, group, messages = [], friends = [] }) 
                                 )}
 
                                 {group.members?.map(member => (
-                                    <div key={member.id} className="flex items-center gap-2 py-1">
-                                        <div className="w-6 h-6 rounded-full bg-indigo-200 flex items-center justify-center text-xs font-bold text-indigo-700">
-                                            {member.user?.name?.charAt(0)}
+                                    <div key={member.id} className="flex items-center justify-between py-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-indigo-200 flex items-center justify-center text-xs font-bold text-indigo-700">
+                                                {member.user?.name?.charAt(0)}
+                                            </div>
+                                            <p className="text-sm text-gray-700">{member.user?.name}</p>
+                                            {member.role === 'admin' && (
+                                                <span className="text-xs text-indigo-600 font-semibold">Admin</span>
+                                            )}
                                         </div>
-                                        <p className="text-sm text-gray-700">{member.user?.name}</p>
-                                        {member.role === 'admin' && (
-                                            <span className="text-xs text-indigo-600 font-semibold">Admin</span>
+                                        {isAdmin && member.user_id !== auth.user.id && (
+                                            <button
+                                                onClick={() => removeMember(member.user_id)}
+                                                className="text-xs text-red-500 hover:text-red-700"
+                                            >
+                                                Remove
+                                            </button>
                                         )}
                                     </div>
                                 ))}
