@@ -94,6 +94,19 @@ class GroupController extends Controller
                 ->with('error', 'You must join the group first.');
         }
 
+        $friends = \App\Models\ConnectionRequest::where('status', 'accepted')
+            ->where(function ($q) {
+                $q->where('sender_id', Auth::id())
+                  ->orWhere('receiver_id', Auth::id());
+            })
+            ->get()
+            ->map(function ($conn) {
+                $friend = $conn->sender_id === Auth::id()
+                    ? $conn->receiver
+                    : $conn->sender;
+                return $friend;
+            });
+
         $messages = Message::where('group_id', $id)
             ->with('sender')
             ->orderBy('created_at')
@@ -102,6 +115,7 @@ class GroupController extends Controller
         return Inertia::render('GroupChat', [
             'group' => $group,
             'messages' => $messages,
+            'friends' => $friends,
         ]);
     }
 
@@ -131,5 +145,42 @@ class GroupController extends Controller
         ]);
 
         return back()->with('success', 'Message sent.');
+    }
+
+    // Add member to group
+    public function addMember(Request $request, $id)
+    {
+        $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+        ]);
+
+        $group = Group::findOrFail($id);
+
+        // Check if requester is admin
+        $isAdmin = GroupMember::where('group_id', $id)
+            ->where('user_id', Auth::id())
+            ->where('role', 'admin')
+            ->exists();
+
+        if (!$isAdmin) {
+            return back()->with('error', 'Only admin can add members.');
+        }
+
+        // Check if already a member
+        $alreadyMember = GroupMember::where('group_id', $id)
+            ->where('user_id', $request->user_id)
+            ->exists();
+
+        if ($alreadyMember) {
+            return back()->with('error', 'User is already a member.');
+        }
+
+        GroupMember::create([
+            'group_id' => $id,
+            'user_id' => $request->user_id,
+            'role' => 'member',
+        ]);
+
+        return back()->with('success', 'Member added successfully!');
     }
 }

@@ -42,6 +42,12 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                                 <NavLink href={route('friends.index')} active={route().current('friends.index')}>
                                     Friends
                                 </NavLink>
+                                <NavLink href={route('messages.index')} active={route().current('messages.index')}>
+                                    Messages
+                                </NavLink>
+                                <NavLink href={route('groups.index')} active={route().current('groups.index')}>
+                                    Groups
+                                </NavLink>
                                 <NavLink href={route('reports.index')} active={route().current('reports.index')}>
                                     Safety
                                 </NavLink>
@@ -134,6 +140,8 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                                     <Dropdown.Content>
                                         <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
                                         <Dropdown.Link href={route('friends.index')}>Friends ({friendCount})</Dropdown.Link>
+                                        <Dropdown.Link href={route('messages.index')}>Messages</Dropdown.Link>
+                                        <Dropdown.Link href={route('groups.index')}>Groups</Dropdown.Link>
                                         <Dropdown.Link href={route('reports.index')}>Safety Center</Dropdown.Link>
                                         <Dropdown.Link href={route('subscriptions.index')}>Subscription</Dropdown.Link>
                                         <Dropdown.Link href={route('logout')} method="post" as="button">Log Out</Dropdown.Link>
@@ -164,6 +172,12 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                         <ResponsiveNavLink href={route('friends.index')} active={route().current('friends.index')}>
                             Friends
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('messages.index')} active={route().current('messages.index')}>
+                            Messages
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('groups.index')} active={route().current('groups.index')}>
+                            Groups
+                        </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('reports.index')} active={route().current('reports.index')}>
                             Safety
                         </ResponsiveNavLink>
@@ -183,6 +197,8 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                         <div className="mt-3 space-y-1">
                             <ResponsiveNavLink href={route('profile.edit')}>Profile</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('friends.index')}>Friends</ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('messages.index')}>Messages</ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('groups.index')}>Groups</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('reports.index')}>Safety Center</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('subscriptions.index')}>Subscription</ResponsiveNavLink>
                             <ResponsiveNavLink method="post" href={route('logout')} as="button">Log Out</ResponsiveNavLink>
