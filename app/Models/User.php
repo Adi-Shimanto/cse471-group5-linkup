@@ -49,4 +49,34 @@ class User extends Authenticatable
     {
         return $this->hasMany(ConnectionRequest::class, 'receiver_id');
     }
+
+    public function blocksCreated()
+    {
+        return $this->hasMany(UserBlock::class, 'blocker_id');
+    }
+
+    public function blocksReceived()
+    {
+        return $this->hasMany(UserBlock::class, 'blocked_user_id');
+    }
+
+    public function reportsCreated()
+    {
+        return $this->hasMany(Report::class, 'reporter_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)->active()->latestOfMany('ends_at');
+    }
 }
