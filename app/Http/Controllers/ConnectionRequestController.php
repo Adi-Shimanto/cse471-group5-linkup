@@ -47,6 +47,19 @@ class ConnectionRequestController extends Controller
             return back()->with('error', 'Request already exists.');
         }
 
+        // 🔥 Limit free users to 5 requests per 24 hours
+        $user = Auth::user();
+
+        if (!$user->is_premium) {
+            $requestsLast24h = ConnectionRequest::where('sender_id', $senderId)
+                ->where('created_at', '>=', now()->subDay())
+                ->count();
+
+            if ($requestsLast24h >= 5) {
+                return back()->with('error', 'You have reached your daily limit of 5 requests.');
+            }
+        }
+
         ConnectionRequest::create([
             'sender_id' => $senderId,
             'receiver_id' => $receiverId,
@@ -105,4 +118,9 @@ class ConnectionRequestController extends Controller
 
         return back()->with('success', 'Friend removed successfully.');
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> 07f61644a858a7f1a889cbb5a36912052411236a

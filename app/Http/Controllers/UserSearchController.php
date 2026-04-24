@@ -37,7 +37,7 @@ class UserSearchController extends Controller
         $friendCount = ConnectionRequest::where('status', 'accepted')
             ->where(function ($query) use ($currentUserId) {
                 $query->where('sender_id', $currentUserId)
-                      ->orWhere('receiver_id', $currentUserId);
+                    ->orWhere('receiver_id', $currentUserId);
             })
             ->count();
 
@@ -51,7 +51,7 @@ class UserSearchController extends Controller
                 })
                 ->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%");
                 })
                 ->select('id', 'name', 'email')
                 ->orderBy('name')
@@ -60,10 +60,10 @@ class UserSearchController extends Controller
                 ->map(function ($user) use ($currentUserId, $blockedByMe) {
                     $requestRecord = ConnectionRequest::where(function ($query) use ($currentUserId, $user) {
                         $query->where('sender_id', $currentUserId)
-                              ->where('receiver_id', $user->id);
+                            ->where('receiver_id', $user->id);
                     })->orWhere(function ($query) use ($currentUserId, $user) {
                         $query->where('sender_id', $user->id)
-                              ->where('receiver_id', $currentUserId);
+                            ->where('receiver_id', $currentUserId);
                     })->first();
 
                     return [

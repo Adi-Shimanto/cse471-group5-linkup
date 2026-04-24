@@ -43,4 +43,9 @@ class FriendsController extends Controller
             'friendCount' => $friends->count(),
         ]);
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> 07f61644a858a7f1a889cbb5a36912052411236a
