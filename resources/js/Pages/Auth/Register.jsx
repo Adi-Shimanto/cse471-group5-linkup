@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 export default function Register() {
     const [step, setStep] = useState(1);
 
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         // STEP 1
         name: '',
         email: '',
@@ -27,7 +27,6 @@ export default function Register() {
     });
 
     // ✅ FIXED: Removed history blocking bug
-    // Only warn user if leaving mid-registration (safe behavior)
     useEffect(() => {
         const handleBeforeUnload = (e) => {
             if (step > 1) {
@@ -57,21 +56,43 @@ export default function Register() {
     // VALIDATION PER STEP
     const validateStep = () => {
         if (step === 1) {
-            return (
-                data.name &&
-                data.email &&
-                data.password &&
-                data.password_confirmation &&
-                data.password === data.password_confirmation
-            );
+            if (!data.name || !data.email || !data.password || !data.password_confirmation) {
+                alert('Please fill in all fields.');
+                return false;
+            }
+            if (data.password !== data.password_confirmation) {
+                alert('Passwords do not match.');
+                return false;
+            }
+            if (data.password.length < 8) {
+                alert('Password must be at least 8 characters.');
+                return false;
+            }
+            return true;
         }
 
         if (step === 2) {
-            return data.personality && data.purpose.length > 0;
+            if (!data.personality) {
+                alert('Please select your personality type.');
+                return false;
+            }
+            if (data.purpose.length === 0) {
+                alert('Please select at least one purpose.');
+                return false;
+            }
+            return true;
         }
 
         if (step === 3) {
-            return data.group_type.length > 0 && data.group_size;
+            if (data.group_type.length === 0) {
+                alert('Please select at least one group type.');
+                return false;
+            }
+            if (!data.group_size) {
+                alert('Please select your preferred group size.');
+                return false;
+            }
+            return true;
         }
 
         return true;
@@ -79,24 +100,51 @@ export default function Register() {
 
     const nextStep = () => {
         if (!validateStep()) {
-            alert('Please complete required fields before continuing.');
             return;
         }
         setStep((prev) => prev + 1);
+        window.scrollTo(0, 0);
     };
 
     const prevStep = () => {
         setStep((prev) => prev - 1);
+        window.scrollTo(0, 0);
     };
 
+    // ✅ FIXED: Proper Inertia form submission
     const submit = (e) => {
         e.preventDefault();
+        
+        // Final validation before submitting
+        if (!validateStep()) {
+            return;
+        }
 
         post(route('register'), {
             onSuccess: () => {
-                window.location.href = '/dashboard';
+                // Inertia handles redirect automatically
+                // No manual window.location needed!
+                console.log('Registration successful!');
+            },
+            onError: (errors) => {
+                console.error('Registration errors:', errors);
+                // Stay on current step if there are validation errors
+                if (errors.email || errors.name || errors.password) {
+                    setStep(1);
+                }
+            },
+            onFinish: () => {
+                console.log('Registration request completed');
             },
         });
+    };
+
+    // Helper to show field errors
+    const showError = (field) => {
+        if (errors[field]) {
+            return <p className="text-red-500 text-xs mt-1">{errors[field]}</p>;
+        }
+        return null;
     };
 
     return (
@@ -108,59 +156,75 @@ export default function Register() {
             }}
         >
             <div className="w-full max-w-xl bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-xl">
-
-                <Head title="Register" />
+                <Head title="Register - LinkUp" />
 
                 {/* STEP INDICATOR */}
                 <div className="flex justify-between mb-6 text-sm font-bold">
-                    <span className={step === 1 ? 'text-indigo-600' : ''}>Account</span>
-                    <span className={step === 2 ? 'text-indigo-600' : ''}>Personality</span>
-                    <span className={step === 3 ? 'text-indigo-600' : ''}>Group</span>
-                    <span className={step === 4 ? 'text-indigo-600' : ''}>AI Profile</span>
+                    <span className={step === 1 ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-gray-500'}>
+                        Account
+                    </span>
+                    <span className={step === 2 ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-gray-500'}>
+                        Personality
+                    </span>
+                    <span className={step === 3 ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-gray-500'}>
+                        Group
+                    </span>
+                    <span className={step === 4 ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-gray-500'}>
+                        AI Profile
+                    </span>
                 </div>
 
                 <form onSubmit={submit}>
-
                     {/* ================= STEP 1 ================= */}
                     {step === 1 && (
                         <div>
                             <h2 className="text-xl font-bold mb-4">Create Account</h2>
 
-                            <input
-                                className="w-full mb-3 border p-2 rounded"
-                                placeholder="Name"
-                                value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                            />
+                            <div className="mb-3">
+                                <input
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Full Name"
+                                    value={data.name}
+                                    onChange={(e) => setData('name', e.target.value)}
+                                />
+                                {showError('name')}
+                            </div>
 
-                            <input
-                                className="w-full mb-3 border p-2 rounded"
-                                placeholder="Email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                            />
+                            <div className="mb-3">
+                                <input
+                                    type="email"
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Email Address"
+                                    value={data.email}
+                                    onChange={(e) => setData('email', e.target.value)}
+                                />
+                                {showError('email')}
+                            </div>
 
-                            <input
-                                type="password"
-                                className="w-full mb-3 border p-2 rounded"
-                                placeholder="Password"
-                                value={data.password}
-                                onChange={(e) => setData('password', e.target.value)}
-                            />
+                            <div className="mb-3">
+                                <input
+                                    type="password"
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Password (min. 8 characters)"
+                                    value={data.password}
+                                    onChange={(e) => setData('password', e.target.value)}
+                                />
+                                {showError('password')}
+                            </div>
 
-                            <input
-                                type="password"
-                                className="w-full mb-3 border p-2 rounded"
-                                placeholder="Confirm Password"
-                                value={data.password_confirmation}
-                                onChange={(e) =>
-                                    setData('password_confirmation', e.target.value)
-                                }
-                            />
+                            <div className="mb-3">
+                                <input
+                                    type="password"
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Confirm Password"
+                                    value={data.password_confirmation}
+                                    onChange={(e) => setData('password_confirmation', e.target.value)}
+                                />
+                            </div>
 
                             <button
                                 type="button"
-                                className="w-full bg-indigo-600 text-white py-2 rounded"
+                                className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
                                 onClick={nextStep}
                             >
                                 Next → Personality
@@ -173,67 +237,73 @@ export default function Register() {
                         <div>
                             <h2 className="text-xl font-bold mb-4">Personality & Purpose</h2>
 
-                            <select
-                                className="w-full border p-2 rounded mb-3"
-                                value={data.personality}
-                                onChange={(e) => setData('personality', e.target.value)}
-                            >
-                                <option value="">Select Personality</option>
-                                <option value="introvert">Introvert</option>
-                                <option value="extrovert">Extrovert</option>
-                                <option value="ambivert">Ambivert</option>
-                            </select>
+                            <div className="mb-3">
+                                <select
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={data.personality}
+                                    onChange={(e) => setData('personality', e.target.value)}
+                                >
+                                    <option value="">Select Personality Type</option>
+                                    <option value="introvert">Introvert</option>
+                                    <option value="extrovert">Extrovert</option>
+                                    <option value="ambivert">Ambivert</option>
+                                </select>
+                                {showError('personality')}
+                            </div>
 
-                            <p className="font-semibold mb-2">Purpose (Select multiple)</p>
-                            {[
-                                'Study improvement',
-                                'Career growth',
-                                'Skill learning',
-                                'Emotional support',
-                                'Networking',
-                                'Casual friendship',
-                                'Romantic connection ❤️',
-                            ].map((item) => (
-                                <label key={item} className="block text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.purpose.includes(item)}
-                                        onChange={() => toggleArrayValue('purpose', item)}
-                                    />{' '}
-                                    {item}
-                                </label>
-                            ))}
+                            <p className="font-semibold mb-2">Purpose (Select all that apply)</p>
+                            <div className="mb-3 space-y-1">
+                                {[
+                                    'Study improvement',
+                                    'Career growth',
+                                    'Skill learning',
+                                    'Emotional support',
+                                    'Networking',
+                                    'Casual friendship',
+                                    'Romantic connection ❤️',
+                                ].map((item) => (
+                                    <label key={item} className="flex items-center gap-2 text-sm cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.purpose.includes(item)}
+                                            onChange={() => toggleArrayValue('purpose', item)}
+                                            className="cursor-pointer"
+                                        />
+                                        <span>{item}</span>
+                                    </label>
+                                ))}
+                                {showError('purpose')}
+                            </div>
 
-                            <select
-                                className="w-full border p-2 rounded mt-3"
-                                value={data.communication_style}
-                                onChange={(e) =>
-                                    setData('communication_style', e.target.value)
-                                }
-                            >
-                                <option value="">Communication Style</option>
-                                <option value="frequent">Frequent</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="low">Low</option>
-                                <option value="text">Text Only</option>
-                                <option value="voice">Voice Preferred</option>
-                            </select>
+                            <div className="mb-3">
+                                <select
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={data.communication_style}
+                                    onChange={(e) => setData('communication_style', e.target.value)}
+                                >
+                                    <option value="">Communication Style (Optional)</option>
+                                    <option value="frequent">Frequent</option>
+                                    <option value="moderate">Moderate</option>
+                                    <option value="low">Low</option>
+                                    <option value="text">Text Only</option>
+                                    <option value="voice">Voice Preferred</option>
+                                </select>
+                            </div>
 
                             <div className="flex gap-2 mt-4">
                                 <button
                                     type="button"
-                                    className="w-1/2 bg-gray-400 text-white py-2 rounded"
+                                    className="w-1/2 bg-gray-400 text-white py-2 rounded hover:bg-gray-500 transition"
                                     onClick={prevStep}
                                 >
-                                    Back
+                                    ← Back
                                 </button>
-
                                 <button
                                     type="button"
-                                    className="w-1/2 bg-indigo-600 text-white py-2 rounded"
+                                    className="w-1/2 bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
                                     onClick={nextStep}
                                 >
-                                    Next
+                                    Next →
                                 </button>
                             </div>
                         </div>
@@ -244,52 +314,56 @@ export default function Register() {
                         <div>
                             <h2 className="text-xl font-bold mb-4">Group Preferences</h2>
 
-                            <p className="font-semibold mb-2">Group Type</p>
-                            {[
-                                'Study group',
-                                'Coding group',
-                                'Gaming group',
-                                'Hobby group',
-                                'Fitness group',
-                            ].map((item) => (
-                                <label key={item} className="block text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.group_type.includes(item)}
-                                        onChange={() => toggleArrayValue('group_type', item)}
-                                    />{' '}
-                                    {item}
-                                </label>
-                            ))}
+                            <p className="font-semibold mb-2">Group Type (Select all that apply)</p>
+                            <div className="mb-3 space-y-1">
+                                {[
+                                    'Study group',
+                                    'Coding group',
+                                    'Gaming group',
+                                    'Hobby group',
+                                    'Fitness group',
+                                ].map((item) => (
+                                    <label key={item} className="flex items-center gap-2 text-sm cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.group_type.includes(item)}
+                                            onChange={() => toggleArrayValue('group_type', item)}
+                                            className="cursor-pointer"
+                                        />
+                                        <span>{item}</span>
+                                    </label>
+                                ))}
+                                {showError('group_type')}
+                            </div>
 
-                            <select
-                                className="w-full border p-2 rounded mt-3"
-                                value={data.group_size}
-                                onChange={(e) =>
-                                    setData('group_size', e.target.value)
-                                }
-                            >
-                                <option value="">Group Size</option>
-                                <option value="small">Small (1–5)</option>
-                                <option value="medium">Medium (6–10)</option>
-                                <option value="large">Large (10+)</option>
-                            </select>
+                            <div className="mb-3">
+                                <select
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={data.group_size}
+                                    onChange={(e) => setData('group_size', e.target.value)}
+                                >
+                                    <option value="">Preferred Group Size</option>
+                                    <option value="small">Small (1–5 people)</option>
+                                    <option value="medium">Medium (6–10 people)</option>
+                                    <option value="large">Large (10+ people)</option>
+                                </select>
+                                {showError('group_size')}
+                            </div>
 
                             <div className="flex gap-2 mt-4">
                                 <button
                                     type="button"
-                                    className="w-1/2 bg-gray-400 text-white py-2 rounded"
+                                    className="w-1/2 bg-gray-400 text-white py-2 rounded hover:bg-gray-500 transition"
                                     onClick={prevStep}
                                 >
-                                    Back
+                                    ← Back
                                 </button>
-
                                 <button
                                     type="button"
-                                    className="w-1/2 bg-indigo-600 text-white py-2 rounded"
+                                    className="w-1/2 bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
                                     onClick={nextStep}
                                 >
-                                    Next
+                                    Next →
                                 </button>
                             </div>
                         </div>
@@ -298,53 +372,61 @@ export default function Register() {
                     {/* ================= STEP 4 ================= */}
                     {step === 4 && (
                         <div>
-                            <h2 className="text-xl font-bold mb-4">AI Profile</h2>
+                            <h2 className="text-xl font-bold mb-4">Complete Your Profile</h2>
 
-                            <textarea
-                                className="w-full border p-2 rounded mb-3"
-                                placeholder="Describe yourself..."
-                                value={data.bio}
-                                onChange={(e) => setData('bio', e.target.value)}
-                            />
+                            <div className="mb-3">
+                                <textarea
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Tell us about yourself..."
+                                    rows="3"
+                                    value={data.bio}
+                                    onChange={(e) => setData('bio', e.target.value)}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">This helps AI match you better</p>
+                            </div>
 
-                            <input
-                                className="w-full border p-2 rounded mb-3"
-                                placeholder="Ideal person"
-                                value={data.ideal_person}
-                                onChange={(e) =>
-                                    setData('ideal_person', e.target.value)
-                                }
-                            />
+                            <div className="mb-3">
+                                <input
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Describe your ideal match/person"
+                                    value={data.ideal_person}
+                                    onChange={(e) => setData('ideal_person', e.target.value)}
+                                />
+                            </div>
 
-                            <input
-                                className="w-full border p-2 rounded mb-3"
-                                placeholder="Dislike type"
-                                value={data.dislike_type}
-                                onChange={(e) =>
-                                    setData('dislike_type', e.target.value)
-                                }
-                            />
+                            <div className="mb-3">
+                                <input
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Things you dislike or want to avoid"
+                                    value={data.dislike_type}
+                                    onChange={(e) => setData('dislike_type', e.target.value)}
+                                />
+                            </div>
+
+                            {errors.general && (
+                                <div className="mb-3 p-2 bg-red-100 text-red-700 rounded text-sm">
+                                    {errors.general}
+                                </div>
+                            )}
 
                             <div className="flex gap-2 mt-4">
                                 <button
                                     type="button"
-                                    className="w-1/2 bg-gray-400 text-white py-2 rounded"
+                                    className="w-1/2 bg-gray-400 text-white py-2 rounded hover:bg-gray-500 transition"
                                     onClick={prevStep}
                                 >
-                                    Back
+                                    ← Back
                                 </button>
-
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="w-1/2 bg-green-600 text-white py-2 rounded"
+                                    className="w-1/2 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Finish Registration
+                                    {processing ? 'Creating Account...' : 'Finish Registration'}
                                 </button>
                             </div>
                         </div>
                     )}
-
                 </form>
             </div>
         </div>
