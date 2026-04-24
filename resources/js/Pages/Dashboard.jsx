@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import PostCard from '@/Components/PostCard';
 
 export default function Dashboard({
     auth,
@@ -12,6 +13,7 @@ export default function Dashboard({
     premiumStatus = {},
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
+    const [postContent, setPostContent] = useState('');
     const notifications = usePage().props.notifications ?? [];
 
     const submitSearch = (e) => {
@@ -25,31 +27,30 @@ export default function Dashboard({
     };
 
     const sendRequest = (receiverId) => {
-        router.post(route('connection-requests.store'), { receiver_id: receiverId }, { preserveScroll: true, preserveState: true });
+        router.post(route('connection-requests.store'), { receiver_id: receiverId }, { preserveScroll: true });
     };
 
     const acceptRequest = (id) => {
-        router.post(route('connection-requests.accept', id), {}, { preserveScroll: true, preserveState: true });
+        router.post(route('connection-requests.accept', id), {}, { preserveScroll: true });
     };
 
     const declineRequest = (id) => {
-        router.post(route('connection-requests.decline', id), {}, { preserveScroll: true, preserveState: true });
+        router.post(route('connection-requests.decline', id), {}, { preserveScroll: true });
     };
 
     const blockUser = (userId) => {
-        if (!window.confirm('Block this user? This will remove any existing connection.')) return;
-        router.post(route('blocks.store'), { blocked_user_id: userId }, { preserveScroll: true });
+        if (!window.confirm('Block this user?')) return;
+        router.post(route('blocks.store'), { blocked_user_id: userId });
     };
 
     const unblockUser = (userId) => {
-        router.delete(route('blocks.destroy', userId), { preserveScroll: true });
+        router.delete(route('blocks.destroy', userId));
     };
 
-    const reportUser = (userId, userName) => {
-        const reason = window.prompt(`Why are you reporting ${userName}?`);
+    const reportUser = (userId, name) => {
+        const reason = window.prompt(`Report ${name}:`);
         if (!reason) return;
-        const description = window.prompt('Add extra details for the admin (optional):') ?? '';
-        router.post(route('reports.store'), { reported_user_id: userId, reason, description }, { preserveScroll: true });
+        router.post(route('reports.store'), { reported_user_id: userId, reason });
     };
 
     const hasSearch = (filters.search ?? '').trim() !== '';
@@ -59,147 +60,82 @@ export default function Dashboard({
             <Head title="Dashboard" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-5xl space-y-6 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-5xl space-y-6">
+
+                    {/* Dashboard + Subscription */}
                     <div className="grid gap-6 lg:grid-cols-2">
-                        <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                            <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
-                            <p className="mt-1 text-sm text-gray-600">
-                                You currently have <span className="font-semibold">{friendCount}</span> friend{friendCount === 1 ? '' : 's'}.
-                            </p>
-                            <div className="mt-4 flex flex-wrap gap-3">
-                                <Link href={route('friends.index')} className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-                                    Open Friends Page
-                                </Link>
-                                <Link href={route('reports.index')} className="inline-flex items-center rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700">
-                                    Safety Center
-                                </Link>
-                            </div>
+                        <div className="bg-white p-6 rounded shadow">
+                            <h2 className="text-xl font-bold">Dashboard</h2>
+                            <p>Friends: {friendCount}</p>
+                            <Link href={route('friends.index')} className="btn">Friends</Link>
+                            <Link href={route('reports.index')} className="btn bg-red-500">Safety</Link>
                         </div>
 
-                        <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900">Subscription</h3>
-                                    <p className="mt-1 text-sm text-gray-600">
-                                        Current plan: <span className="font-semibold">{premiumStatus.plan_name ?? 'Free'}</span>
-                                    </p>
-                                </div>
-                                <Link href={route('subscriptions.index')} className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600">
-                                    Manage Plans
-                                </Link>
-                            </div>
-                            <p className="mt-3 text-sm text-gray-600">
-                                {premiumStatus.is_premium
-                                    ? `Premium access is active${premiumStatus.expires_at ? ` until ${premiumStatus.expires_at}` : ''}.`
-                                    : 'Free users have limited search and matchmaking. Upgrade to unlock the premium features.'}
-                            </p>
+                        <div className="bg-white p-6 rounded shadow">
+                            <h3>Subscription</h3>
+                            <p>Plan: {premiumStatus.plan_name ?? 'Free'}</p>
+                            <Link href={route('subscriptions.index')} className="btn bg-yellow-500">Plans</Link>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-semibold">Recent Notifications</h3>
-                        {notifications.length === 0 ? (
-                            <p className="text-sm text-gray-600">No notifications yet.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {notifications.map((notification) => (
-                                    <div key={notification.id} className="rounded-lg border border-gray-200 p-4">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-900">{notification.title}</p>
-                                                <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
-                                            </div>
-                                            <span className="text-xs text-gray-400">{notification.created_at}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                    {/* Notifications */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <h3>Notifications</h3>
+                        {notifications.map(n => (
+                            <div key={n.id}>{n.title}</div>
+                        ))}
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-semibold">Incoming Requests</h3>
-                        {incomingRequests.length === 0 ? (
-                            <p className="text-sm text-gray-600">No pending requests right now.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {incomingRequests.map((requestItem) => (
-                                    <div key={requestItem.id} className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                        <div>
-                                            <p className="text-lg font-medium">{requestItem.sender.name}</p>
-                                            <p className="text-sm text-gray-600">{requestItem.sender.email}</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => acceptRequest(requestItem.id)} className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700">Accept</button>
-                                            <button onClick={() => declineRequest(requestItem.id)} className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">Decline</button>
-                                        </div>
-                                    </div>
-                                ))}
+                    {/* Incoming Requests */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <h3>Requests</h3>
+                        {incomingRequests.map(r => (
+                            <div key={r.id}>
+                                {r.sender.name}
+                                <button onClick={() => acceptRequest(r.id)}>Accept</button>
+                                <button onClick={() => declineRequest(r.id)}>Decline</button>
                             </div>
-                        )}
+                        ))}
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-semibold">Search Profiles</h3>
-                        <form onSubmit={submitSearch} className="mb-6 flex flex-col gap-3 sm:flex-row">
-                            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or email" className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                            <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">Search</button>
-                            <button type="button" onClick={clearSearch} className="rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600">Clear</button>
+                    {/* Search */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <form onSubmit={submitSearch}>
+                            <input value={search} onChange={e => setSearch(e.target.value)} />
+                            <button>Search</button>
                         </form>
 
-                        {!hasSearch && <p className="text-sm text-gray-600">Type a name or email to search for other users.</p>}
-                        {hasSearch && users.length === 0 && <p className="text-sm text-red-600">No profiles found.</p>}
-
-                        {users.length > 0 && (
-                            <div className="space-y-3">
-                                {users.map((user) => (
-                                    <div key={user.id} className="rounded-lg border border-gray-200 p-4">
-                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                            <div>
-                                                <p className="text-lg font-medium">{user.name}</p>
-                                                <p className="text-sm text-gray-600">{user.email}</p>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {user.is_blocked ? (
-                                                    <button onClick={() => unblockUser(user.id)} className="rounded-md bg-gray-700 px-4 py-2 text-white hover:bg-gray-800">Unblock</button>
-                                                ) : user.connection_status === 'accepted' ? (
-                                                    <button disabled className="cursor-not-allowed rounded-md bg-green-600 px-4 py-2 text-white">Connected</button>
-                                                ) : user.connection_status === 'pending' && user.is_request_sender ? (
-                                                    <button disabled className="cursor-not-allowed rounded-md bg-amber-500 px-4 py-2 text-white">Request Sent</button>
-                                                ) : user.connection_status === 'pending' ? (
-                                                    <button disabled className="cursor-not-allowed rounded-md bg-gray-500 px-4 py-2 text-white">Pending Response</button>
-                                                ) : (
-                                                    <button onClick={() => sendRequest(user.id)} className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">Send Request</button>
-                                                )}
-
-                                                {!user.is_blocked && (
-                                                    <button onClick={() => blockUser(user.id)} className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">Block</button>
-                                                )}
-
-                                                <button onClick={() => reportUser(user.id, user.name)} className="rounded-md bg-rose-500 px-4 py-2 text-white hover:bg-rose-600">Report</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                        {users.map(u => (
+                            <div key={u.id}>
+                                {u.name}
+                                {u.is_blocked
+                                    ? <button onClick={() => unblockUser(u.id)}>Unblock</button>
+                                    : <button onClick={() => blockUser(u.id)}>Block</button>
+                                }
+                                <button onClick={() => reportUser(u.id, u.name)}>Report</button>
                             </div>
-                        )}
+                        ))}
                     </div>
 
-                    <div className="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <h3 className="mb-4 text-lg font-bold">Newsfeed</h3>
-                        {posts.length === 0 ? (
-                            <p className="text-gray-500">No posts yet. Be the first to post!</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {posts.map((post) => (
-                                    <div key={post.id} className="rounded-lg border p-4">
-                                        <p className="font-semibold">{post.user?.name}</p>
-                                        <p className="mt-2 text-gray-700">{post.content}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                    {/* Newsfeed */}
+                    <div className="bg-white p-6 rounded shadow">
+                        <h3>Newsfeed</h3>
+
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            router.post('/posts', { content: postContent }, {
+                                onSuccess: () => setPostContent('')
+                            });
+                        }}>
+                            <textarea value={postContent} onChange={e => setPostContent(e.target.value)} />
+                            <button>Post</button>
+                        </form>
+
+                        {posts.map(post => (
+                            <PostCard key={post.id} post={post} auth={auth} />
+                        ))}
                     </div>
+
                 </div>
             </div>
         </AuthenticatedLayout>

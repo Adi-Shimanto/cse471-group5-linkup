@@ -119,4 +119,3 @@ class ConnectionRequestController extends Controller
         return back()->with('success', 'Friend removed successfully.');
     }
 }
-
