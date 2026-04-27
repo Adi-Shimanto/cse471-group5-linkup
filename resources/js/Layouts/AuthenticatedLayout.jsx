@@ -42,6 +42,10 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                                 <NavLink href={route('friends.index')} active={route().current('friends.index')}>
                                     Friends
                                 </NavLink>
+                                {/* ✅ Activity Tracker Link - Desktop Navigation */}
+                                <NavLink href={route('profile.activities')} active={route().current('profile.activities')}>
+                                    Activity Tracker
+                                </NavLink>
                                 <NavLink href={route('messages.index')} active={route().current('messages.index')}>
                                     Messages
                                 </NavLink>
@@ -143,6 +147,8 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                                     <Dropdown.Content>
                                         <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
                                         <Dropdown.Link href={route('friends.index')}>Friends ({friendCount})</Dropdown.Link>
+                                        {/* ✅ Activity Tracker Link - Desktop Dropdown */}
+                                        <Dropdown.Link href={route('profile.activities')}>Activity Tracker</Dropdown.Link>
                                         <Dropdown.Link href={route('messages.index')}>Messages</Dropdown.Link>
                                         <Dropdown.Link href={route('groups.index')}>Groups</Dropdown.Link>
                                         <Dropdown.Link href={route('reports.index')}>Safety Center</Dropdown.Link>
@@ -175,6 +181,10 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                         <ResponsiveNavLink href={route('friends.index')} active={route().current('friends.index')}>
                             Friends
                         </ResponsiveNavLink>
+                        {/* ✅ Activity Tracker Link - Mobile Navigation */}
+                        <ResponsiveNavLink href={route('profile.activities')} active={route().current('profile.activities')}>
+                            Activity Tracker
+                        </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('messages.index')} active={route().current('messages.index')}>
                             Messages
                         </ResponsiveNavLink>
@@ -203,6 +213,8 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
                         <div className="mt-3 space-y-1">
                             <ResponsiveNavLink href={route('profile.edit')}>Profile</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('friends.index')}>Friends</ResponsiveNavLink>
+                            {/* ✅ Activity Tracker Link - Mobile Dropdown */}
+                            <ResponsiveNavLink href={route('profile.activities')}>Activity Tracker</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('messages.index')}>Messages</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('groups.index')}>Groups</ResponsiveNavLink>
                             <ResponsiveNavLink href={route('reports.index')}>Safety Center</ResponsiveNavLink>
@@ -227,4 +239,5 @@ export default function AuthenticatedLayout({ header, children, user: passedUser
             <main>{children}</main>
         </div>
     );
+    
 }

@@ -2,117 +2,157 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ConnectionRequest;
-use App\Models\Report;
 use App\Models\User;
 use App\Models\UserBlock;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Report;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class BlockReportController extends Controller
 {
-    public function index(Request $request): Response
+    use LogsActivity;
+
+    /**
+     * Display safety center (reports and blocks)
+     */
+    public function index()
     {
-        $authUserId = $request->user()->id;
-
-        $blockedUsers = UserBlock::with('blockedUser:id,name,email')
-            ->where('blocker_id', $authUserId)
-            ->latest()
+        $user = Auth::user();
+        
+        // Get users that current user has blocked
+        $blockedUsers = UserBlock::where('blocker_id', $user->id)
+            ->with('blockedUser')
             ->get()
-            ->map(function (UserBlock $block) {
-                return [
-                    'id' => $block->id,
-                    'blocked_user_id' => $block->blocked_user_id,
-                    'name' => $block->blockedUser?->name,
-                    'email' => $block->blockedUser?->email,
-                    'created_at' => $block->created_at?->toDateTimeString(),
-                ];
-            });
-
-        $reports = Report::with(['reportedUser:id,name,email'])
-            ->where('reporter_id', $authUserId)
+            ->pluck('blockedUser');
+        
+        // Get reports made by current user
+        $reports = Report::where('reporter_id', $user->id)
+            ->with('reportedUser')
             ->latest()
-            ->get()
-            ->map(function (Report $report) {
-                return [
-                    'id' => $report->id,
-                    'target' => $report->reportedUser
-                        ? $report->reportedUser->name.' (User)'
-                        : ($report->reported_group_name ? $report->reported_group_name.' (Group)' : 'Unknown'),
-                    'reason' => $report->reason,
-                    'description' => $report->description,
-                    'status' => $report->status,
-                    'created_at' => $report->created_at?->toDateTimeString(),
-                ];
-            });
-
+            ->get();
+        
         return Inertia::render('Reports', [
             'blockedUsers' => $blockedUsers,
             'reports' => $reports,
         ]);
     }
 
-    public function blockUser(Request $request): RedirectResponse
+    /**
+     * Block a user
+     */
+    public function blockUser(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'blocked_user_id' => ['required', 'exists:users,id'],
         ]);
 
         $blockerId = Auth::id();
-        $blockedUserId = (int) $validated['blocked_user_id'];
+        $blockedUserId = $request->blocked_user_id;
 
-        if ($blockerId === $blockedUserId) {
+        if ($blockerId == $blockedUserId) {
             return back()->with('error', 'You cannot block yourself.');
         }
 
-        UserBlock::firstOrCreate([
+        // Check if already blocked
+        $alreadyBlocked = UserBlock::where('blocker_id', $blockerId)
+            ->where('blocked_user_id', $blockedUserId)
+            ->exists();
+
+        if ($alreadyBlocked) {
+            return back()->with('error', 'User already blocked.');
+        }
+
+        // Create block
+        UserBlock::create([
             'blocker_id' => $blockerId,
             'blocked_user_id' => $blockedUserId,
         ]);
 
-        ConnectionRequest::where(function ($query) use ($blockerId, $blockedUserId) {
-            $query->where('sender_id', $blockerId)->where('receiver_id', $blockedUserId);
-        })->orWhere(function ($query) use ($blockerId, $blockedUserId) {
-            $query->where('sender_id', $blockedUserId)->where('receiver_id', $blockerId);
-        })->delete();
+        // Log activity
+        $blockedUser = User::find($blockedUserId);
+        $this->logActivity(
+            'user_blocked',
+            $blockedUser,
+            'Blocked user: ' . $blockedUser->name,
+            ['blocked_user_id' => $blockedUserId]
+        );
 
-        return back()->with('success', 'User blocked successfully. Existing connection removed.');
+        return back()->with('success', 'User blocked successfully.');
     }
 
-    public function unblockUser(Request $request, User $user): RedirectResponse
+    /**
+     * Unblock a user
+     */
+    public function unblockUser($userId)
     {
-        UserBlock::where('blocker_id', $request->user()->id)
-            ->where('blocked_user_id', $user->id)
-            ->delete();
+        $blockerId = Auth::id();
+
+        $block = UserBlock::where('blocker_id', $blockerId)
+            ->where('blocked_user_id', $userId)
+            ->firstOrFail();
+
+        $blockedUser = User::find($userId);
+        
+        $block->delete();
+
+        // Log activity
+        $this->logActivity(
+            'user_unblocked',
+            $blockedUser,
+            'Unblocked user: ' . $blockedUser->name,
+            ['unblocked_user_id' => $userId]
+        );
 
         return back()->with('success', 'User unblocked successfully.');
     }
 
-    public function storeReport(Request $request): RedirectResponse
+    /**
+     * Report a user
+     */
+    public function storeReport(Request $request)
     {
-        $validated = $request->validate([
-            'reported_user_id' => ['nullable', 'exists:users,id'],
-            'reported_group_name' => ['nullable', 'string', 'max:255'],
-            'reason' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
+        $request->validate([
+            'reported_user_id' => ['required', 'exists:users,id'],
+            'reason' => ['required', 'string', 'max:500'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if (empty($validated['reported_user_id']) && empty($validated['reported_group_name'])) {
-            return back()->with('error', 'Please choose a user or provide a group name for the report.');
+        $reporterId = Auth::id();
+        $reportedUserId = $request->reported_user_id;
+
+        if ($reporterId == $reportedUserId) {
+            return back()->with('error', 'You cannot report yourself.');
         }
 
+        // Check if already reported
+        $alreadyReported = Report::where('reporter_id', $reporterId)
+            ->where('reported_user_id', $reportedUserId)
+            ->exists();
+
+        if ($alreadyReported) {
+            return back()->with('error', 'You have already reported this user.');
+        }
+
+        // Create report
         Report::create([
-            'reporter_id' => $request->user()->id,
-            'reported_user_id' => $validated['reported_user_id'] ?? null,
-            'reported_group_name' => $validated['reported_group_name'] ?? null,
-            'reason' => $validated['reason'],
-            'description' => $validated['description'] ?? null,
+            'reporter_id' => $reporterId,
+            'reported_user_id' => $reportedUserId,
+            'reason' => $request->reason,
+            'description' => $request->description,
             'status' => 'pending',
         ]);
 
-        return back()->with('success', 'Report submitted successfully for admin review.');
+        // Log activity
+        $reportedUser = User::find($reportedUserId);
+        $this->logActivity(
+            'user_reported',
+            $reportedUser,
+            'Reported user: ' . $reportedUser->name . ' (Reason: ' . $request->reason . ')',
+            ['reported_user_id' => $reportedUserId, 'reason' => $request->reason]
+        );
+
+        return back()->with('success', 'User reported successfully. Our team will review the report.');
     }
 }
