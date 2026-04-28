@@ -87,8 +87,8 @@ class AiMatchController extends Controller
             return back()->with('error', 'Daily search limit reached (3/day). Upgrade to Premium for unlimited AI matches!');
         }
 
-        // Get AI insights from Gemini API
-        $aiMessage = $this->getGeminiSuggestions($interest);
+        // Get AI insights from Groq API (Free - No Credit Card)
+        $aiMessage = $this->getGroqSuggestions($interest);
 
         // Find matching users based on search interest
         $potentialMatches = User::where('id', '!=', $user->id)
@@ -155,58 +155,50 @@ class AiMatchController extends Controller
     }
 
     /**
-     * Get AI suggestions from Gemini API
+     * Get AI suggestions from Groq API (FREE - NO CREDIT CARD)
      */
-    private function getGeminiSuggestions($interest)
+    private function getGroqSuggestions($interest)
     {
-        // Debug logs
-        Log::info('=== GEMINI API CALL ===');
-        Log::info('Search interest: ' . $interest);
-        
-        $apiKey = env('GEMINI_API_KEY');
-        Log::info('API Key from .env: ' . ($apiKey ? 'YES (length: ' . strlen($apiKey) . ')' : 'NO - MISSING!'));
+        $apiKey = env('GROQ_API_KEY');
         
         if (!$apiKey) {
-            Log::error('Gemini API key is MISSING! Check your .env file.');
+            Log::warning('Groq API key missing');
             return "Based on your interests, we found some great potential matches for you!";
         }
         
         try {
-            $response = Http::timeout(30)->post(
-                'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . $apiKey,
-                [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                [
-                                    'text' => "A user has these interests: {$interest}. Write 2-3 short, friendly sentences suggesting what kind of people or communities would be a great match for them. Be specific. Keep it under 120 words. No markdown. No bullet points."
-                                ]
-                            ]
-                        ]
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout(30)->post('https://api.groq.com/openai/v1/chat/completions', [
+                'model' => 'llama-3.3-70b-versatile',
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => "A user is interested in: {$interest}. Write 2-3 short, friendly sentences suggesting what kind of people or communities would be a great match for them. Be specific. Keep it under 120 words. No markdown. No bullet points."
                     ]
-                ]
-            );
+                ],
+                'temperature' => 0.7,
+                'max_tokens' => 150,
+            ]);
             
-            Log::info('API Response Status: ' . $response->status());
+            Log::info('Groq API Response Status: ' . $response->status());
             
             if ($response->successful()) {
                 $data = $response->json();
-                $aiMessage = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                $aiMessage = $data['choices'][0]['message']['content'] ?? null;
                 if ($aiMessage) {
-                    Log::info('✅ Gemini API SUCCESS! Message: ' . substr($aiMessage, 0, 100));
+                    Log::info('✅ Groq API SUCCESS!');
                     return $aiMessage;
-                } else {
-                    Log::warning('API response successful but no message found');
                 }
             } else {
-                Log::error('API Error Response: ' . $response->body());
+                Log::error('Groq API Error: ' . $response->body());
             }
             
         } catch (\Exception $e) {
-            Log::error('API Exception: ' . $e->getMessage());
+            Log::error('Groq API Exception: ' . $e->getMessage());
         }
         
-        Log::info('Using fallback message');
         return "Based on your interests, we found some great potential matches for you!";
     }
 
