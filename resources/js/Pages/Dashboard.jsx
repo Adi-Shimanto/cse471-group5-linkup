@@ -21,11 +21,6 @@ export default function Dashboard({
         router.get(route('dashboard'), { search }, { preserveState: true, replace: true });
     };
 
-    const clearSearch = () => {
-        setSearch('');
-        router.get(route('dashboard'), {}, { preserveState: true, replace: true });
-    };
-
     const sendRequest = (receiverId) => {
         router.post(route('connection-requests.store'), { receiver_id: receiverId }, { preserveScroll: true });
     };
@@ -53,8 +48,6 @@ export default function Dashboard({
         router.post(route('reports.store'), { reported_user_id: userId, reason });
     };
 
-    const hasSearch = (filters.search ?? '').trim() !== '';
-
     return (
         <AuthenticatedLayout user={auth.user} friendCount={friendCount}>
             <Head title="Dashboard" />
@@ -62,19 +55,28 @@ export default function Dashboard({
             <div className="py-12">
                 <div className="mx-auto max-w-5xl space-y-6">
 
-                    {/* Dashboard + Subscription */}
+                    {/* Dashboard */}
                     <div className="grid gap-6 lg:grid-cols-2">
                         <div className="bg-white p-6 rounded shadow">
                             <h2 className="text-xl font-bold">Dashboard</h2>
                             <p>Friends: {friendCount}</p>
-                            <Link href={route('friends.index')} className="btn">Friends</Link>
-                            <Link href={route('reports.index')} className="btn bg-red-500">Safety</Link>
+
+                            <div className="flex gap-2 mt-3">
+                                <Link href={route('friends.index')} className="bg-blue-500 text-white px-4 py-2 rounded">
+                                    Friends
+                                </Link>
+                                <Link href={route('reports.index')} className="bg-red-500 text-white px-4 py-2 rounded">
+                                    Safety
+                                </Link>
+                            </div>
                         </div>
 
                         <div className="bg-white p-6 rounded shadow">
                             <h3>Subscription</h3>
                             <p>Plan: {premiumStatus.plan_name ?? 'Free'}</p>
-                            <Link href={route('subscriptions.index')} className="btn bg-yellow-500">Plans</Link>
+                            <Link href={route('subscriptions.index')} className="bg-yellow-500 text-white px-4 py-2 rounded mt-2 inline-block">
+                                Plans
+                            </Link>
                         </div>
                     </div>
 
@@ -90,29 +92,84 @@ export default function Dashboard({
                     <div className="bg-white p-6 rounded shadow">
                         <h3>Requests</h3>
                         {incomingRequests.map(r => (
-                            <div key={r.id}>
-                                {r.sender.name}
-                                <button onClick={() => acceptRequest(r.id)}>Accept</button>
-                                <button onClick={() => declineRequest(r.id)}>Decline</button>
+                            <div key={r.id} className="flex items-center justify-between mb-2">
+                                <span>{r.sender.name}</span>
+
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => acceptRequest(r.id)}
+                                        className="bg-green-500 text-white px-3 py-1 rounded"
+                                    >
+                                        Accept
+                                    </button>
+
+                                    <button
+                                        onClick={() => declineRequest(r.id)}
+                                        className="bg-red-500 text-white px-3 py-1 rounded"
+                                    >
+                                        Decline
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Search */}
+                    {/* Search + Users */}
                     <div className="bg-white p-6 rounded shadow">
-                        <form onSubmit={submitSearch}>
-                            <input value={search} onChange={e => setSearch(e.target.value)} />
-                            <button>Search</button>
+                        <form onSubmit={submitSearch} className="flex gap-2 mb-4">
+                            <input
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="border px-3 py-1 rounded w-full"
+                                placeholder="Search users..."
+                            />
+                            <button className="bg-gray-700 text-white px-4 py-1 rounded">
+                                Search
+                            </button>
                         </form>
 
                         {users.map(u => (
-                            <div key={u.id}>
-                                {u.name}
-                                {u.is_blocked
-                                    ? <button onClick={() => unblockUser(u.id)}>Unblock</button>
-                                    : <button onClick={() => blockUser(u.id)}>Block</button>
-                                }
-                                <button onClick={() => reportUser(u.id, u.name)}>Report</button>
+                            <div key={u.id} className="flex items-center justify-between border p-3 rounded mb-2">
+                                <div>{u.name}</div>
+
+                                <div className="flex gap-2">
+
+                                    {/* Send Request */}
+                                    {u.id !== auth.user.id && (
+                                        <button
+                                            onClick={() => sendRequest(u.id)}
+                                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                                        >
+                                            Send Request
+                                        </button>
+                                    )}
+
+                                    {/* Block / Unblock */}
+                                    {u.is_blocked ? (
+                                        <button
+                                            onClick={() => unblockUser(u.id)}
+                                            className="bg-gray-700 text-white px-3 py-1 rounded"
+                                        >
+                                            Unblock
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => blockUser(u.id)}
+                                            className="bg-gray-500 text-white px-3 py-1 rounded"
+                                        >
+                                            Block
+                                        </button>
+                                    )}
+
+                                    {/* Report */}
+                                    <button
+                                        onClick={() => reportUser(u.id, u.name)}
+                                        className="bg-red-500 text-white px-3 py-1 rounded"
+                                    >
+                                        Report
+                                    </button>
+
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -127,8 +184,14 @@ export default function Dashboard({
                                 onSuccess: () => setPostContent('')
                             });
                         }}>
-                            <textarea value={postContent} onChange={e => setPostContent(e.target.value)} />
-                            <button>Post</button>
+                            <textarea
+                                value={postContent}
+                                onChange={e => setPostContent(e.target.value)}
+                                className="w-full border rounded p-2"
+                            />
+                            <button className="bg-blue-600 text-white px-4 py-2 rounded mt-2">
+                                Post
+                            </button>
                         </form>
 
                         {posts.map(post => (
