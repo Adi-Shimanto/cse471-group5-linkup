@@ -149,6 +149,14 @@ export default function ActivityTracker({ auth, activities, stats, actionTypes, 
                             </button>
                         </div>
                     </div>
+                    <div className="mb-3">
+                                <input
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Favorite match of all time"
+                                    value={data.favorite_match_of_all_time}
+                                    onChange={(e) => setData('favorite_match_of_all_time', e.target.value)}
+                                />
+                            </div>
                     
                     {/* Activities List */}
                     <div className="bg-white rounded-lg shadow">
@@ -181,6 +189,7 @@ export default function ActivityTracker({ auth, activities, stats, actionTypes, 
                                                     <span className="text-xs text-gray-400">
                                                         {new Date(activity.created_at).toLocaleString()}
                                                     </span>
+                                                    
                                                 </div>
                                             </div>
                                         </div>

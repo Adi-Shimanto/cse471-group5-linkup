@@ -56,6 +56,13 @@ export default function Edit({ auth }) {
         ideal_person_description: '',
         dislike_type: '',
         
+        // Sports Preference Fields (NEW)
+        favorite_sport: '',
+        favorite_team: '',
+        favorite_player: '',
+        favorite_match: '',
+        favorite_venue: '',
+        
         // Additional Profile Fields
         interests: [],  // Tags for interests/hobbies
         privacy_show_email: true,
@@ -116,6 +123,12 @@ export default function Edit({ auth }) {
         'Yoga', 'Meditation', 'Technology', 'Science', 'Writing'
     ];
 
+    const sportOptions = [
+        'Cricket', 'Football', 'Basketball', 'Tennis', 'Baseball',
+        'Hockey', 'Volleyball', 'Rugby', 'Golf', 'Swimming',
+        'Boxing', 'MMA', 'Badminton', 'Table Tennis', 'Athletics'
+    ];
+
     // ================= LOAD USER DATA INTO FORM =================
     useEffect(() => {
         if (user) {
@@ -131,6 +144,11 @@ export default function Edit({ auth }) {
                 ideal_person: user?.ideal_person || '',
                 ideal_person_description: user?.ideal_person_description || '',
                 dislike_type: user?.dislike_type || '',
+                favorite_sport: user?.favorite_sport || '',
+                favorite_team: user?.favorite_team || '',
+                favorite_player: user?.favorite_player || '',
+                favorite_match: user?.favorite_match || '',
+                favorite_venue: user?.favorite_venue || '',
                 interests: user?.interests ? (typeof user.interests === 'string' ? JSON.parse(user.interests) : user.interests) : [],
                 privacy_show_email: user?.privacy_show_email !== false,
                 privacy_show_location: user?.privacy_show_location !== false,
@@ -158,7 +176,6 @@ export default function Edit({ auth }) {
         }
 
         setForm({ ...form, [field]: arr });
-        // Clear error for this field
         if (errors[field]) {
             setErrors({ ...errors, [field]: null });
         }
@@ -175,7 +192,7 @@ export default function Edit({ auth }) {
         }
     };
 
-    // ================= FIXED HANDLE UPDATE =================
+    // ================= HANDLE UPDATE =================
     const handleUpdate = async () => {
         setSaving(true);
         setErrors({});
@@ -193,6 +210,13 @@ export default function Edit({ auth }) {
             submitData.append('ideal_person', form.ideal_person || '');
             submitData.append('ideal_person_description', form.ideal_person_description || '');
             submitData.append('dislike_type', form.dislike_type || '');
+            
+            // Sports Preference fields
+            submitData.append('favorite_sport', form.favorite_sport || '');
+            submitData.append('favorite_team', form.favorite_team || '');
+            submitData.append('favorite_player', form.favorite_player || '');
+            submitData.append('favorite_match', form.favorite_match  || '');
+            submitData.append('favorite_venue', form.favorite_venue || '');
             
             // JSON fields
             submitData.append('purpose', JSON.stringify(form.purpose));
@@ -276,7 +300,7 @@ export default function Edit({ auth }) {
                             )}
                         </div>
 
-                        <div className="mb-2 text-white">
+                        <div className="mb-2 text-black">
                             <h1 className="text-2xl font-bold">{user?.name}</h1>
                             <p className="text-sm">{user?.email}</p>
                             {user?.location && <p className="text-sm">📍 {user?.location}</p>}
@@ -317,6 +341,12 @@ export default function Edit({ auth }) {
                             Quiz Answers
                         </button>
                         <button 
+                            onClick={() => setActiveTab('sports')}
+                            className={activeTab === 'sports' ? 'text-indigo-600 border-b-2 border-indigo-600 pb-2' : 'text-gray-500'}
+                        >
+                            Sports Preference
+                        </button>
+                        <button 
                             onClick={() => setActiveTab('settings')}
                             className={activeTab === 'settings' ? 'text-indigo-600 border-b-2 border-indigo-600 pb-2' : 'text-gray-500'}
                         >
@@ -340,6 +370,9 @@ export default function Edit({ auth }) {
                                 <p className="text-sm text-gray-600">🎭 Personality: {user?.personality || 'Not set'}</p>
                                 <p className="text-sm text-gray-600">🎯 Purpose: {user?.purpose ? (typeof user.purpose === 'string' ? JSON.parse(user.purpose).join(', ') : user.purpose.join(', ')) : 'Not set'}</p>
                                 <p className="text-sm text-gray-600">👥 Group: {user?.group_type ? (typeof user.group_type === 'string' ? JSON.parse(user.group_type).join(', ') : user.group_type.join(', ')) : 'Not set'}</p>
+                                {user?.favorite_sport && (
+                                    <p className="text-sm text-gray-600 mt-2">⚽ Favorite Sport: {user?.favorite_sport}</p>
+                                )}
                             </div>
                         </div>
 
@@ -460,6 +493,41 @@ export default function Edit({ auth }) {
                                     <div>
                                         <h3 className="font-semibold text-gray-700">Group Size Preference</h3>
                                         <p>{user?.group_size || 'Not provided'}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SPORTS PREFERENCE TAB (NEW) */}
+                            {activeTab === 'sports' && (
+
+                                <div className="bg-white p-6 rounded-xl shadow space-y-4">
+
+                                    <h2 className="text-xl font-bold">Sports Preference</h2>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700">Favorite Sport</h3>
+                                        <p>{user?.favorite_sport || 'Not provided'}</p>
+
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700">Favorite Team</h3>
+                                        <p>{user?.favorite_team || 'Not provided'}</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700">Favorite Player</h3>
+                                        <p>{user?.favorite_player || 'Not provided'}</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700">Favorite Match of All Time</h3>
+                                        <p>{user?.favorite_match || 'Not provided'}</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700">Favorite Venue</h3>
+                                        <p>{user?.favorite_venue || 'Not provided'}</p>
                                     </div>
                                 </div>
                             )}
@@ -669,6 +737,54 @@ export default function Edit({ auth }) {
                                 placeholder="What do you want to avoid?"
                                 value={form.dislike_type}
                                 onChange={(e) => setForm({ ...form, dislike_type: e.target.value })}
+                            />
+
+                            {/* ================= SPORTS PREFERENCE SECTION (NEW) ================= */}
+                            <h3 className="font-bold mt-4 mb-2">Sports Preference</h3>
+                            
+                            <label className="font-semibold block mb-1">Favorite Sport</label>
+                            <select 
+                                className="w-full border p-2 mb-3 rounded"
+                                value={form.favorite_sport}
+                                onChange={(e) => setForm({ ...form, favorite_sport: e.target.value })}
+                            >
+                                <option value="">Select Favorite Sport</option>
+                                {sportOptions.map(sport => (
+                                    <option key={sport} value={sport}>{sport}</option>
+                                ))}
+                            </select>
+
+                            <label className="font-semibold block mb-1">Favorite Team</label>
+                            <input 
+                                className="w-full border p-2 mb-3 rounded"
+                                placeholder="e.g., Barcelona, Lakers, Yankees"
+                                value={form.favorite_team}
+                                onChange={(e) => setForm({ ...form, favorite_team: e.target.value })}
+                            />
+
+                            <label className="font-semibold block mb-1">Favorite Player</label>
+                            <input 
+                                className="w-full border p-2 mb-3 rounded"
+                                placeholder="e.g., Messi, LeBron James, Kohli"
+                                value={form.favorite_player}
+                                onChange={(e) => setForm({ ...form, favorite_player: e.target.value })}
+                            />
+
+                            <label className="font-semibold block mb-1">Favorite Match of All Time</label>
+                            <textarea 
+                                className="w-full border p-2 mb-3 rounded"
+                                rows="2"
+                                placeholder="Describe your favorite match/sporting event of all time..."
+                                value={form.favorite_match}
+                                onChange={(e) => setForm({ ...form, favorite_match: e.target.value })}
+                            />
+
+                            <label className="font-semibold block mb-1">Favorite Venue</label>
+                            <input 
+                                className="w-full border p-2 mb-3 rounded"
+                                placeholder="e.g., Camp Nou, Wembley, MCG"
+                                value={form.favorite_venue}
+                                onChange={(e) => setForm({ ...form, favorite_venue: e.target.value })}
                             />
 
                             {/* Privacy Controls */}

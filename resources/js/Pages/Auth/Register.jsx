@@ -20,10 +20,13 @@ export default function Register() {
         group_type: [],
         group_size: '',
 
-        // STEP 4
+        // STEP 4 - Fixed: Added missing fields
         bio: '',
         ideal_person: '',
         dislike_type: '',
+        favorite_player: '',      // Added missing field
+        favorite_match_of_all_time: '',  // Added missing field
+        favorite_venue: '',       // Added missing field
     });
 
     // ✅ FIXED: Removed history blocking bug
@@ -170,7 +173,7 @@ export default function Register() {
                         Group
                     </span>
                     <span className={step === 4 ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : 'text-gray-500'}>
-                        AI Profile
+                        Sports & Profile
                     </span>
                 </div>
 
@@ -372,12 +375,12 @@ export default function Register() {
                     {/* ================= STEP 4 ================= */}
                     {step === 4 && (
                         <div>
-                            <h2 className="text-xl font-bold mb-4">Complete Your Profile</h2>
+                            <h2 className="text-xl font-bold mb-4">Sports & Profile</h2>
 
                             <div className="mb-3">
                                 <textarea
                                     className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Tell us about yourself..."
+                                    placeholder="Name of sports..."
                                     rows="3"
                                     value={data.bio}
                                     onChange={(e) => setData('bio', e.target.value)}
@@ -388,7 +391,7 @@ export default function Register() {
                             <div className="mb-3">
                                 <input
                                     className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Describe your ideal match/person"
+                                    placeholder="Favorite Team"
                                     value={data.ideal_person}
                                     onChange={(e) => setData('ideal_person', e.target.value)}
                                 />
@@ -397,7 +400,35 @@ export default function Register() {
                             <div className="mb-3">
                                 <input
                                     className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    placeholder="Things you dislike or want to avoid"
+                                    placeholder="Favorite Player"
+                                    value={data.favorite_player}
+                                    onChange={(e) => setData('favorite_player', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="mb-3">
+                                <input
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Favorite match of all time"
+                                    value={data.favorite_match_of_all_time}
+                                    onChange={(e) => setData('favorite_match_of_all_time', e.target.value)}
+                                />
+                            </div>
+                            
+                            <div className="mb-3">
+                                <input
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Favorite Venue"
+                                    value={data.favorite_venue}
+                                    onChange={(e) => setData('favorite_venue', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="mb-3">
+                                <textarea
+                                    className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Tell us about yourself (bio)..."
+                                    rows="3"
                                     value={data.dislike_type}
                                     onChange={(e) => setData('dislike_type', e.target.value)}
                                 />
