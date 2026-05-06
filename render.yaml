@@ -1,9 +1,10 @@
 services:
   - type: web
     name: linkup
-    env: php
-    buildCommand: "composer install --no-dev --no-interaction && npm install && npm run build && php artisan optimize:clear"
-    startCommand: "php artisan serve --host=0.0.0.0 --port=10000"
+    runtime: image
+    repo: https://github.com/Adi-Shimanto/cse471-group5-linkup
+    dockerfilePath: ./Dockerfile
+    branch: main
     envVars:
       - key: APP_ENV
         value: production
