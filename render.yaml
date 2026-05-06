@@ -9,8 +9,6 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
-      - key: APP_KEY
-        value: base64:+R8wne68L7ShYX7WsM30VuhfRkKQFO2i9bafyOaxztQ=
       - key: APP_URL
         value: https://linkup.onrender.com
       - key: DB_CONNECTION
@@ -23,10 +21,6 @@ services:
         value: postgres
       - key: DB_USERNAME
         value: postgres.nbeawyezfxkdcsdjnbwp
-      - key: DB_PASSWORD
-        value: "mouse and keyboard"
-      - key: GROQ_API_KEY
-        value: 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
       - key: LOG_CHANNEL
         value: stderr
       - key: SESSION_DRIVER
