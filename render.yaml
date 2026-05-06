@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: linkup
+    runtime: php
+    buildCommand: composer install --no-dev && npm install && npm run build && php artisan optimize:clear
+    startCommand: php artisan serve --host=0.0.0.0 --port=10000
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        value: base64:+R8wne68L7ShYX7WsM30VuhfRkKQFO2i9bafyOaxztQ=
+      - key: APP_URL
+        value: https://linkup.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: 13.213.241.248
+      - key: DB_PORT
+        value: 5432
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        value: postgres.nbeawyezfxkdcsdjnbwp
+      - key: DB_PASSWORD
+        value: "mouse and keyboard"
+      - key: GROQ_API_KEY
+        value: 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
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: NODE_VERSION
+        value: "20"
