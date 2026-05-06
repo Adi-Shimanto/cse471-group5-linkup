@@ -29,3 +29,5 @@ RUN chown -R www-data:www-data /var/www/html \
 
 # Expose port 80
 EXPOSE 80
+# Ensure Apache is started and keeps the container running
+CMD ["apache2-foreground"]
